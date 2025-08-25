@@ -1,0 +1,9 @@
+[package]
+name = "dendritic_ml_models"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dendritic = "2.0.3"
+ndarray = "0.16.1"
+polars = {version = "0.50.0", features = ["parquet"] }
