@@ -6,5 +6,6 @@ fn main() {
     let mut model = IrisFlowersModel::register("iris_flowers");
     model.load();
     model.transform();
-    model.train(); 
+    model.train();
+    model.inference(); 
 }
