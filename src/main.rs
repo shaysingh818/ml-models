@@ -3,6 +3,8 @@ use dendritic_ml_models::iris::IrisFlowersModel;
 
 
 fn main() {
-    let model = IrisFlowersModel::register("iris_flowers");
+    let mut model = IrisFlowersModel::register("iris_flowers");
     model.load();
+    model.transform();
+    model.train(); 
 }
