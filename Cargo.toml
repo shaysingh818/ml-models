@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 dendritic = "2.1.0"
 ndarray = "0.16.1"
-polars = {version = "0.50.0", features = ["parquet"] }
+polars = {version = "0.50.0", features = ["parquet", "ndarray"] }
+polars-core = "0.50.0"

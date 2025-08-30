@@ -154,7 +154,6 @@ impl Inference for IrisFlowersModel {
         println!("Third class predictions");
         println!("{:?}", class_2_predict); 
 
-
     }
 
 }

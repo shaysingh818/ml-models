@@ -603,6 +603,7 @@ dependencies = [
  "dendritic",
  "ndarray",
  "polars",
+ "polars-core",
 ]
 
 [[package]]
@@ -1795,6 +1796,7 @@ dependencies = [
  "hashbrown",
  "indexmap",
  "itoa",
+ "ndarray",
  "num-traits",
  "polars-arrow",
  "polars-compute",
