@@ -17,7 +17,7 @@ You can run any of the experiments via `cargo run --bin <module_name>`. For exam
 ```bash
 cargo run --bin iris
 cargo run --bin house_prices
-
+```
 
 📊 Datasets
 
