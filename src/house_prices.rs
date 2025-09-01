@@ -1,12 +1,10 @@
 use ndarray::{s, arr2, Array, Array2, Axis}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
+use dendritic::optimizer::prelude::*;
+use dendritic::autodiff::prelude::*; 
 use dendritic::optimizer::model::*;
-use dendritic::optimizer::train::*; 
-use dendritic::optimizer::optimizers::*; 
-use dendritic::optimizer::regression::sgd::*;
-use dendritic::preprocessing::processor::*; 
-
+use dendritic::preprocessing::prelude::*; 
 
 pub struct HousePrices {
 
@@ -21,6 +19,12 @@ pub struct HousePrices {
 
     /// Target values as ndaarray
     y: Array2<f64>,
+
+    /// Features encoder
+    x_encode: MinMax,
+
+    /// Feature target encoder
+    y_encode: MinMax,
 
     /// Training dataset split
     training_data: (Array2<f64>, Array2<f64>),
@@ -47,6 +51,8 @@ impl ModelPipeline for HousePrices {
             file_path: "data/california_housing.parquet".into(),
             x: temp_x.clone(),
             y: temp_y.clone(),
+            x_encode: MinMax::new(),
+            y_encode: MinMax::new(),
             training_data: (temp_x.clone(), temp_y.clone()),
             testing_data: (temp_x.clone(), temp_y.clone()),
             model: SGD::new(&temp_x, &temp_y, 0.01).unwrap()
@@ -101,13 +107,10 @@ impl Transform for HousePrices {
         }
 
         let temp_x = self.x.clone();
-        let mut scalar = MinMaxScalar::new(&temp_x).unwrap();
-        let encoded = scalar.encode();
-
+        let encoded = self.x_encode.transform(&temp_x.view());
 
         let temp_y = self.y.clone();
-        let mut scalar_y = MinMaxScalar::new(&temp_y).unwrap();
-        let y_encoded = scalar_y.encode();
+        let y_encoded = self.y_encode.transform(&temp_y.view());
 
         self.x = encoded;
         self.y = y_encoded; 
@@ -129,7 +132,6 @@ impl Transform for HousePrices {
             ).to_owned()
         );
 
-
     }
 
 }
@@ -144,7 +146,7 @@ impl Train for HousePrices {
         self.model = SGD::new(
             &self.training_data.0, 
             &self.training_data.1, 
-            0.0001
+            0.001
         ).unwrap();
 
         //let mut opt = Nesterov::default(&self.model);
@@ -177,28 +179,21 @@ impl Inference for HousePrices {
         let y2 = self.testing_data.1.slice(s![50..60, ..]);
 
         println!("Second set of predictions");
-        println!("{:?}", y2);
+        println!("{:?}", self.y_encode.inverse_transform(&y2.view()));
         println!(""); 
-        println!("{:?}", loaded.predict(&x2.to_owned())); 
+        let predicted = loaded.predict(&x2.to_owned()); 
+        let decoded = self.y_encode.inverse_transform(&predicted.view());
+        println!("{:?}", decoded); 
 
         let x3 = self.testing_data.0.slice(s![10..15, ..]);
         let y3 = self.testing_data.1.slice(s![10..15, ..]);
 
-
-        /*
-        let mut scalar = MinMaxScalar::new(&y3.to_owned()).unwrap();
-        let decoded = scalar.decode(&y3.to_owned());
-
-        let predicted = loaded.predict(&x3.to_owned());
-
-        let mut scalar2 = MinMaxScalar::new(&predicted).unwrap();
-
-        let decoded2 = scalar2.decode(&predicted);
-
         println!("Third set of predictions");
-        println!("{:?}", decoded);
+        println!("{:?}", self.y_encode.inverse_transform(&y3.view()));
         println!(""); 
-        println!("{:?}", decoded2); */  
+        let predicted = loaded.predict(&x3.to_owned()); 
+        let decoded = self.y_encode.inverse_transform(&predicted.view());
+        println!("{:?}", decoded); 
 
     }
 

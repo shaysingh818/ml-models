@@ -1,4 +1,4 @@
-use ndarray::{s, arr2, Array, Array2, Axis}; 
+use ndarray::{s, Array, Array2}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
 use dendritic::optimizer::model::*;
@@ -28,6 +28,12 @@ pub struct StudentPerformance {
     /// Target values as ndaarray
     y: Array2<f64>,
 
+    /// Training dataset as ndarray
+    x_encode: StandardScalar,
+
+    /// Target values as ndaarray
+    y_encode: StandardScalar,
+
     /// Training dataset split
     training_data: (Array2<f64>, Array2<f64>),
 
@@ -51,6 +57,8 @@ impl ModelPipeline for StudentPerformance {
             file_path: "data/student_performance.parquet".into(),
             x: temp_x.clone(),
             y: temp_y.clone(),
+            x_encode: StandardScalar::new(),
+            y_encode: StandardScalar::new(),
             training_data: (temp_x.clone(), temp_y.clone()),
             testing_data: (temp_x.clone(), temp_y.clone()),
             model: SGD::new(
@@ -105,11 +113,11 @@ impl Transform for StudentPerformance {
             panic!("Number of rows for sample features and target unequal");
         }
 
-        let temp_x = self.x.clone();
-        let mut scalar = StandardScalar::new(&temp_x).unwrap();
-        let encoded = scalar.encode();
-
-        self.x = encoded;
+        let x_enc = self.x_encode.transform(&self.x.view());
+        let y_enc = self.y_encode.transform(&self.y.view()); 
+        
+        self.x = x_enc;
+        self.y = y_enc; 
 
         let train_split = 0.8 * num_rows as f64; 
         let test_split = 0.2 * num_rows as f64;
@@ -139,12 +147,12 @@ impl Train for StudentPerformance {
         self.model = SGD::new(
             &self.training_data.0, 
             &self.training_data.1, 
-            0.0001
+            0.001
         ).unwrap();
 
-        let mut opt = Nesterov::default(&self.model);
+        let mut opt = Adam::default(&self.model);
 
-        self.model.train_batch_with_optimizer(50, 128, 1000, &mut opt);
+        self.model.train_batch_with_optimizer(10, 128, 1000, &mut opt);
         self.model.save("models/student_performance").unwrap();
 
     }
@@ -164,22 +172,27 @@ impl Inference for StudentPerformance {
         let y1 = self.testing_data.1.slice(s![0..5, ..]);
 
         println!("First set of predictions");
-        println!("{:?}", y1);
-        println!("{:?}", loaded.predict(&x1.to_owned())); 
+        println!("{:?}", self.y_encode.inverse_transform(&y1.view()));
+        let predicted = loaded.predict(&x1.to_owned());
+        println!("{:?}", self.y_encode.inverse_transform(&predicted.view())); 
 
         let x2 = self.testing_data.0.slice(s![5..10, ..]);
         let y2 = self.testing_data.1.slice(s![5..10, ..]);
 
         println!("Second set of predictions");
-        println!("{:?}", y2);
-        println!("{:?}", loaded.predict(&x2.to_owned())); 
+        println!("{:?}", self.y_encode.inverse_transform(&y2.view()));
+        let predicted = loaded.predict(&x2.to_owned());
+        println!("{:?}", self.y_encode.inverse_transform(&predicted.view())); 
+
 
         let x3 = self.testing_data.0.slice(s![10..15, ..]);
         let y3 = self.testing_data.1.slice(s![10..15, ..]);
 
         println!("Third set of predictions");
-        println!("{:?}", y3);
-        println!("{:?}", loaded.predict(&x3.to_owned())); 
+        println!("{:?}", self.y_encode.inverse_transform(&y3.view()));
+        let predicted = loaded.predict(&x3.to_owned());
+        println!("{:?}", self.y_encode.inverse_transform(&predicted.view())); 
+
 
     }
 

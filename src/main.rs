@@ -19,16 +19,16 @@ fn main() {
     model.train();
     model.inference();
 
-    let mut model = StudentPerformance::register("student_performance");
+    let mut model = HousePrices::register("housing_prices");
     model.load();
     model.transform();
     model.train();
     model.inference(); */
 
-    let mut model = HousePrices::register("housing_prices");
+    let mut model = StudentPerformance::register("student_performance");
     model.load();
     model.transform();
-    //model.train();
+    model.train();
     model.inference(); 
 
 }

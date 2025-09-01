@@ -1,10 +1,8 @@
-use ndarray::{s, arr2, Array, Array2, Axis}; 
+use ndarray::{s, Array, Array2, Axis}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
-use dendritic::optimizer::model::*;
-use dendritic::optimizer::train::*;  
-use dendritic::optimizer::regression::sgd::*;
-use dendritic::preprocessing::processor::*; 
+use dendritic::optimizer::prelude::*; 
+use dendritic::preprocessing::prelude::*; 
 
 /*
 fn print_type_of<T>(_: &T) {
@@ -87,12 +85,12 @@ impl Transform for DOWJModel {
         println!("Running transform step for: {:?}", self.name); 
 
         let temp_x = self.x.clone();
-        let mut scalar = MinMaxScalar::new(&temp_x).unwrap();
-        let encoded = scalar.encode();
+        let mut scalar = MinMax::new();
+        let encoded = scalar.transform(&temp_x.view());
 
         let temp_y = self.y.clone();
-        let mut scalar_target = StandardScalar::new(&temp_y).unwrap();
-        let encoded_2 = scalar_target.encode();
+        let mut scalar_target = MinMax::new();
+        let encoded_2 = scalar_target.transform(&temp_y.view());
 
         //self.x = encoded; 
         //self.y = encoded_2; 

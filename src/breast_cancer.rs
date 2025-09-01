@@ -1,11 +1,9 @@
-use ndarray::{s, Array, Array2}; 
+use ndarray::{s, Array2}; 
 use polars::prelude::*;
-use polars_core::prelude::*; 
 use polars::prelude::ParquetReader;
-use dendritic::optimizer::model::*;
-use dendritic::optimizer::train::*;  
-use dendritic::optimizer::regression::logistic::*;
-use dendritic::preprocessing::processor::*; 
+use dendritic::optimizer::prelude::*;
+use dendritic::optimizer::regression::logistic::*; 
+use dendritic::preprocessing::prelude::*; 
 
 fn print_type_of<T>(_: &T) {
     println!("Type: {}", std::any::type_name::<T>());
@@ -98,8 +96,8 @@ impl Transform for BreastCancerModel {
     fn transform(&mut self) {
 
         let temp_x = self.x.clone();
-        let mut scalar = MinMaxScalar::new(&temp_x).unwrap();
-        let encoded = scalar.encode();
+        let mut scalar = MinMax::new();
+        let encoded = scalar.transform(&temp_x.view());
         self.x = encoded;
 
     }

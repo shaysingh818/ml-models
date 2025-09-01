@@ -579,9 +579,9 @@ checksum = "85d3cef41d236720ed453e102153a53e4cc3d2fde848c0078a50cf249e8e3e5b"
 
 [[package]]
 name = "dendritic"
-version = "2.1.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfd2aadbb13f10e3efff6061c8641b64ff6b5d5f144b1d8576d717f7bf9c3dcc"
+checksum = "86492f1bfae970ba85b86e17144f4159e163406f26c868701c751d9ef0ab129a"
 dependencies = [
  "chrono",
  "env_logger",

@@ -1,10 +1,9 @@
 use ndarray::{arr2, Array, Array2, Axis}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
-use dendritic::optimizer::model::*;
-use dendritic::optimizer::train::*;  
-use dendritic::optimizer::regression::logistic::*;
-use dendritic::preprocessing::processor::*; 
+use dendritic::optimizer::prelude::*;
+use dendritic::optimizer::regression::logistic::*; 
+use dendritic::preprocessing::prelude::*; 
 
 /*
 fn print_type_of<T>(_: &T) {
@@ -94,8 +93,8 @@ impl Transform for IrisFlowersModel {
         println!("Running transform step for: {:?}", self.name);
 
         let y_original = self.y.clone();
-        let mut encoder = OneHotEncoding::new(&y_original).unwrap();
-        let y_one_hot = encoder.encode();
+        let mut encoder = OneHot::new();
+        let y_one_hot = encoder.transform(&y_original.view());
         self.y = y_one_hot; 
 
     }
