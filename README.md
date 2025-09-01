@@ -19,7 +19,7 @@ cargo run --bin iris
 cargo run --bin house_prices
 ```
 
-📊 Datasets
+# 📊 Datasets
 
 | Dataset               | Task Type              | File Path                          |
 | --------------------- | ---------------------- | ---------------------------------- |
