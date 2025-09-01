@@ -1,9 +1,7 @@
-use ndarray::{s, arr2, Array, Array2, Axis}; 
+use ndarray::{s, Array2}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
 use dendritic::optimizer::prelude::*;
-use dendritic::autodiff::prelude::*; 
-use dendritic::optimizer::model::*;
 use dendritic::preprocessing::prelude::*; 
 
 pub struct HousePrices {
@@ -32,9 +30,14 @@ pub struct HousePrices {
     /// Testing data
     testing_data: (Array2<f64>, Array2<f64>),
 
-    /// Model associated with pipeline
-    model: SGD,
+    /// SGD model with option to add optimizer
+    sgd: SGD,
 
+    /// Ridge regression model
+    ridge: Ridge,
+
+    /// Lasso regression model
+    lasso: Lasso
 
 }
 
@@ -55,7 +58,9 @@ impl ModelPipeline for HousePrices {
             y_encode: MinMax::new(),
             training_data: (temp_x.clone(), temp_y.clone()),
             testing_data: (temp_x.clone(), temp_y.clone()),
-            model: SGD::new(&temp_x, &temp_y, 0.01).unwrap()
+            sgd: SGD::new(&temp_x, &temp_y, 0.01).unwrap(),
+            ridge: Ridge::new(&temp_x, &temp_y, 0.001, 0.001).unwrap(),
+            lasso: Lasso::new(&temp_x, &temp_y, 0.01, 0.01).unwrap()
         }
     }
 
@@ -116,7 +121,6 @@ impl Transform for HousePrices {
         self.y = y_encoded; 
 
         let train_split = 0.8 * num_rows as f64; 
-        let test_split = 0.2 * num_rows as f64;
 
         self.training_data = (
             self.x.slice(s![0..train_split as usize, ..]).to_owned(), 
@@ -143,16 +147,29 @@ impl Train for HousePrices {
 
         println!("Running train step for: {:?}", self.name); 
 
-        self.model = SGD::new(
+        self.sgd = SGD::new(
             &self.training_data.0, 
             &self.training_data.1, 
             0.001
         ).unwrap();
 
-        //let mut opt = Nesterov::default(&self.model);
+        let mut opt = Adam::default(&self.sgd);
 
-        self.model.train_batch(5, 128, 1000);
-        self.model.save("models/housing_prices").unwrap();
+        self.ridge = Ridge::new(
+            &self.training_data.0, 
+            &self.training_data.1, 
+            0.001,
+            0.0001
+        ).unwrap();
+
+        //let mut opt = Nesterov::default(&self.model);
+        println!("Training sgd model first");
+        self.sgd.train_batch_with_optimizer(5, 128, 1000, &mut opt);
+        self.sgd.save("models/sgd_housing_prices").unwrap();
+
+        println!("Training ridge model");
+        self.ridge.train_batch(5, 128, 1000);
+        self.ridge.save("models/ridge_housing_prices").unwrap();
 
     }
 
@@ -165,15 +182,51 @@ impl Inference for HousePrices {
 
         println!("Running inference step for: {:?}", self.name); 
 
-        let mut loaded = SGD::load("models/housing_prices").unwrap();
+        let mut loaded = SGD::load("models/sgd_housing_prices").unwrap();
 
         let x1 = self.testing_data.0.slice(s![0..5, ..]);
         let y1 = self.testing_data.1.slice(s![0..5, ..]);
 
         println!("First set of predictions");
-        println!("{:?}", y1);
+        println!("{:?}", self.y_encode.inverse_transform(&y1.view()));
         println!(""); 
-        println!("{:?}", loaded.predict(&x1.to_owned())); 
+        let predicted = loaded.predict(&x1.to_owned()); 
+        let decoded = self.y_encode.inverse_transform(&predicted.view());
+        println!("{:?}", decoded); 
+
+        let x2 = self.testing_data.0.slice(s![50..60, ..]);
+        let y2 = self.testing_data.1.slice(s![50..60, ..]);
+
+        println!("Second set of predictions");
+        println!("{:?}", self.y_encode.inverse_transform(&y2.view()));
+        println!(""); 
+        let predicted = loaded.predict(&x2.to_owned()); 
+        let decoded = self.y_encode.inverse_transform(&predicted.view());
+        println!("{:?}", decoded); 
+
+        let x3 = self.testing_data.0.slice(s![10..15, ..]);
+        let y3 = self.testing_data.1.slice(s![10..15, ..]);
+
+        println!("Third set of predictions");
+        println!("{:?}", self.y_encode.inverse_transform(&y3.view()));
+        println!(""); 
+        let predicted = loaded.predict(&x3.to_owned()); 
+        let decoded = self.y_encode.inverse_transform(&predicted.view());
+        println!("{:?}", decoded); 
+
+
+        // ridge predictions
+        let mut loaded = Ridge::load("models/ridge_housing_prices").unwrap();
+
+        let x1 = self.testing_data.0.slice(s![0..5, ..]);
+        let y1 = self.testing_data.1.slice(s![0..5, ..]);
+
+        println!("First set of predictions");
+        println!("{:?}", self.y_encode.inverse_transform(&y1.view()));
+        println!(""); 
+        let predicted = loaded.predict(&x1.to_owned()); 
+        let decoded = self.y_encode.inverse_transform(&predicted.view());
+        println!("{:?}", decoded); 
 
         let x2 = self.testing_data.0.slice(s![50..60, ..]);
         let y2 = self.testing_data.1.slice(s![50..60, ..]);

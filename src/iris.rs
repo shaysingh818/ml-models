@@ -1,4 +1,4 @@
-use ndarray::{arr2, Array, Array2, Axis}; 
+use ndarray::{arr2, Array2}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
 use dendritic::optimizer::prelude::*;
@@ -56,30 +56,23 @@ impl Load for IrisFlowersModel {
 
         println!("Running load step for: {:?}", self.name); 
 
-        let mut x: Array2<f64> = Array2::zeros((150, 4));
-        let mut y: Array2<f64> = Array2::zeros((150, 1));
-
         let mut file = std::fs::File::open(&self.file_path).unwrap();
         let df = ParquetReader::new(&mut file).finish().unwrap();
 
-        let cols = ["sepal_length_cm", "sepal_width_cm", "petal_length_cm", "petal_width_cm"];
-        for (i, col_name) in cols.iter().enumerate() {
+        let df_select = df.select([
+            "sepal_length_cm", 
+            "sepal_width_cm", 
+            "petal_length_cm", 
+            "petal_width_cm"
+        ]).unwrap();
 
-            let col_df = df.column(col_name).unwrap().f64().unwrap();
-            let col_df_vec: Vec<f64> = col_df.into_no_null_iter().collect();
+        let df_target = df.select(["species_code"]).unwrap();
+ 
+        self.x = df_select.
+            to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
 
-            let col = Array::from_vec(col_df_vec);
-            x.index_axis_mut(Axis(1), i).assign(&col);
-        }
-
-        let y_col_df = df.column("species_code").unwrap().f64().unwrap();
-        let y_col_df_vec: Vec<f64> = y_col_df.into_no_null_iter().collect();
-
-        let col = Array::from_vec(y_col_df_vec);
-        y.index_axis_mut(Axis(1), 0).assign(&col);
-
-        self.x = x; 
-        self.y = y; 
+        self.y = df_target.
+            to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
 
     }
 

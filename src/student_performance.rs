@@ -1,4 +1,4 @@
-use ndarray::{s, Array, Array2}; 
+use ndarray::{s,Array2}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
 use dendritic::optimizer::model::*;
@@ -120,7 +120,6 @@ impl Transform for StudentPerformance {
         self.y = y_enc; 
 
         let train_split = 0.8 * num_rows as f64; 
-        let test_split = 0.2 * num_rows as f64;
 
         self.training_data = (
             self.x.slice(s![0..train_split as usize, ..]).to_owned(), 
@@ -147,7 +146,7 @@ impl Train for StudentPerformance {
         self.model = SGD::new(
             &self.training_data.0, 
             &self.training_data.1, 
-            0.001
+            0.1
         ).unwrap();
 
         let mut opt = Adam::default(&self.model);

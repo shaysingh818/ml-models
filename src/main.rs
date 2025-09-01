@@ -7,11 +7,6 @@ use dendritic_ml_models::student_performance::StudentPerformance;
 fn main() {
 
     /*
-    let mut model = IrisFlowersModel::register("iris_flowers");
-    model.load();
-    model.transform();
-    model.train();
-    model.inference();
 
     let mut model = BreastCancerModel::register("breast_cancer");
     model.load();
@@ -19,13 +14,20 @@ fn main() {
     model.train();
     model.inference();
 
-    let mut model = HousePrices::register("housing_prices");
+
+    let mut model = StudentPerformance::register("student_performance");
+    model.load();
+    model.transform();
+    model.train();
+    model.inference(); 
+
+    let mut model = IrisFlowersModel::register("iris_flowers");
     model.load();
     model.transform();
     model.train();
     model.inference(); */
 
-    let mut model = StudentPerformance::register("student_performance");
+    let mut model = HousePrices::register("housing_prices");
     model.load();
     model.transform();
     model.train();

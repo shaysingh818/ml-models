@@ -1,4 +1,4 @@
-use ndarray::{s, Array, Array2, Axis}; 
+use ndarray::{s, Array2}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
 use dendritic::optimizer::prelude::*; 
@@ -92,8 +92,8 @@ impl Transform for DOWJModel {
         let mut scalar_target = MinMax::new();
         let encoded_2 = scalar_target.transform(&temp_y.view());
 
-        //self.x = encoded; 
-        //self.y = encoded_2; 
+        self.x = encoded; 
+        self.y = encoded_2; 
 
     }
 

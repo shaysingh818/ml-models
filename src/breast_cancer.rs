@@ -5,10 +5,6 @@ use dendritic::optimizer::prelude::*;
 use dendritic::optimizer::regression::logistic::*; 
 use dendritic::preprocessing::prelude::*; 
 
-fn print_type_of<T>(_: &T) {
-    println!("Type: {}", std::any::type_name::<T>());
-} 
-
 
 // Testing & benchmarking model for multi class classification
 pub struct BreastCancerModel {
