@@ -4,249 +4,71 @@ use polars::prelude::ParquetReader;
 use dendritic::optimizer::prelude::*;
 use dendritic::preprocessing::prelude::*; 
 
-pub struct HousePrices {
+pub struct CocaColaStockModel {
 
     /// Name of model
     name: String,
 
-    /// Path of where dataset lives
-    file_path: String,
+    /// Path of where training dataset lives
+    train_file_path: String,
 
-    /// Training dataset as ndarray
-    x: Array2<f64>,
-
-    /// Target values as ndaarray
-    y: Array2<f64>,
-
-    /// Features encoder
-    x_encode: MinMax,
-
-    /// Feature target encoder
-    y_encode: MinMax,
-
-    /// Training dataset split
-    training_data: (Array2<f64>, Array2<f64>),
-
-    /// Testing data
-    testing_data: (Array2<f64>, Array2<f64>),
-
-    /// SGD model with option to add optimizer
-    sgd: SGD,
-
-    /// Ridge regression model
-    ridge: Ridge,
-
-    /// Lasso regression model
-    lasso: Lasso
-
+    /// Path of where testing dataset lives
+    test_file_path: String
 }
 
 
-impl ModelPipeline for HousePrices {
+impl ModelPipeline for CocaColaStockModel {
  
     fn register(name: &str) -> Self {
 
-        let temp_x: Array2<f64> = Array2::zeros((0, 0));
-        let temp_y: Array2<f64> = Array2::zeros((0, 0));
-
-        HousePrices {
-            name: name.to_string(),
-            file_path: "data/california_housing.parquet".into(),
-            x: temp_x.clone(),
-            y: temp_y.clone(),
-            x_encode: MinMax::new(),
-            y_encode: MinMax::new(),
-            training_data: (temp_x.clone(), temp_y.clone()),
-            testing_data: (temp_x.clone(), temp_y.clone()),
-            sgd: SGD::new(&temp_x, &temp_y, 0.01).unwrap(),
-            ridge: Ridge::new(&temp_x, &temp_y, 0.001, 0.001).unwrap(),
-            lasso: Lasso::new(&temp_x, &temp_y, 0.01, 0.01).unwrap()
+        CocaColaStockModel {
+            name: name.to_string(), 
+            train_file_path: "data/coca_cola_train.parquet".to_string(),
+            test_file_path: "data/coca_cola_test.parquet".to_string(),
         }
-    }
 
+    }
 }
 
 
-
-impl Load for HousePrices {
+impl Load for CocaColaStockModel {
 
     fn load(&mut self) {
 
         println!("Running load step for: {:?}", self.name); 
 
-        let mut file = std::fs::File::open(&self.file_path).unwrap();
-        let df = ParquetReader::new(&mut file).finish().unwrap();
-
-        let df_select = df.select([
-            "longitude",
-            "latitude",
-            "housing_median_age",
-            "total_rooms",
-            "population",
-            "median_income",
-        ]).unwrap();
-
-
-        let df_target = df.select(["median_house_value"]).unwrap(); 
-
-        self.x = df_select.
-            to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
-
-        self.y = df_target.
-            to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
-
     }
 
 }
 
 
-impl Transform for HousePrices {
+impl Transform for CocaColaStockModel {
 
     fn transform(&mut self) {
 
         println!("Running transform step for: {:?}", self.name);
 
-        let num_rows = self.x.nrows(); 
-        if num_rows != self.y.nrows() {
-            panic!("Number of rows for sample features and target unequal");
-        }
-
-        let temp_x = self.x.clone();
-        let encoded = self.x_encode.transform(&temp_x.view());
-
-        let temp_y = self.y.clone();
-        let y_encoded = self.y_encode.transform(&temp_y.view());
-
-        self.x = encoded;
-        self.y = y_encoded; 
-
-        let train_split = 0.8 * num_rows as f64; 
-
-        self.training_data = (
-            self.x.slice(s![0..train_split as usize, ..]).to_owned(), 
-            self.y.slice(s![0..train_split as usize, ..]).to_owned()
-        );
-
-        self.testing_data = (
-            self.x.slice(
-                s![train_split as usize..num_rows, ..]
-            ).to_owned(), 
-            self.y.slice(
-                s![train_split as usize..num_rows, ..]
-            ).to_owned()
-        );
-
     }
 
 }
 
 
-impl Train for HousePrices {
+impl Train for CocaColaStockModel {
 
     fn train(&mut self) {
 
         println!("Running train step for: {:?}", self.name); 
 
-        self.sgd = SGD::new(
-            &self.training_data.0, 
-            &self.training_data.1, 
-            0.001
-        ).unwrap();
-
-        let mut opt = Adam::default(&self.sgd);
-
-        self.ridge = Ridge::new(
-            &self.training_data.0, 
-            &self.training_data.1, 
-            0.001,
-            0.0001
-        ).unwrap();
-
-        //let mut opt = Nesterov::default(&self.model);
-        println!("Training sgd model first");
-        self.sgd.train_batch_with_optimizer(5, 128, 1000, &mut opt);
-        self.sgd.save("models/sgd_housing_prices").unwrap();
-
-        println!("Training ridge model");
-        self.ridge.train_batch(5, 128, 1000);
-        self.ridge.save("models/ridge_housing_prices").unwrap();
-
     }
 
 }
 
 
-impl Inference for HousePrices {
+impl Inference for CocaColaStockModel {
 
     fn inference(&mut self) {
 
         println!("Running inference step for: {:?}", self.name); 
-
-        let mut loaded = SGD::load("models/sgd_housing_prices").unwrap();
-
-        let x1 = self.testing_data.0.slice(s![0..5, ..]);
-        let y1 = self.testing_data.1.slice(s![0..5, ..]);
-
-        println!("First set of predictions");
-        println!("{:?}", self.y_encode.inverse_transform(&y1.view()));
-        println!(""); 
-        let predicted = loaded.predict(&x1.to_owned()); 
-        let decoded = self.y_encode.inverse_transform(&predicted.view());
-        println!("{:?}", decoded); 
-
-        let x2 = self.testing_data.0.slice(s![50..60, ..]);
-        let y2 = self.testing_data.1.slice(s![50..60, ..]);
-
-        println!("Second set of predictions");
-        println!("{:?}", self.y_encode.inverse_transform(&y2.view()));
-        println!(""); 
-        let predicted = loaded.predict(&x2.to_owned()); 
-        let decoded = self.y_encode.inverse_transform(&predicted.view());
-        println!("{:?}", decoded); 
-
-        let x3 = self.testing_data.0.slice(s![10..15, ..]);
-        let y3 = self.testing_data.1.slice(s![10..15, ..]);
-
-        println!("Third set of predictions");
-        println!("{:?}", self.y_encode.inverse_transform(&y3.view()));
-        println!(""); 
-        let predicted = loaded.predict(&x3.to_owned()); 
-        let decoded = self.y_encode.inverse_transform(&predicted.view());
-        println!("{:?}", decoded); 
-
-
-        // ridge predictions
-        let mut loaded = Ridge::load("models/ridge_housing_prices").unwrap();
-
-        let x1 = self.testing_data.0.slice(s![0..5, ..]);
-        let y1 = self.testing_data.1.slice(s![0..5, ..]);
-
-        println!("First set of predictions");
-        println!("{:?}", self.y_encode.inverse_transform(&y1.view()));
-        println!(""); 
-        let predicted = loaded.predict(&x1.to_owned()); 
-        let decoded = self.y_encode.inverse_transform(&predicted.view());
-        println!("{:?}", decoded); 
-
-        let x2 = self.testing_data.0.slice(s![50..60, ..]);
-        let y2 = self.testing_data.1.slice(s![50..60, ..]);
-
-        println!("Second set of predictions");
-        println!("{:?}", self.y_encode.inverse_transform(&y2.view()));
-        println!(""); 
-        let predicted = loaded.predict(&x2.to_owned()); 
-        let decoded = self.y_encode.inverse_transform(&predicted.view());
-        println!("{:?}", decoded); 
-
-        let x3 = self.testing_data.0.slice(s![10..15, ..]);
-        let y3 = self.testing_data.1.slice(s![10..15, ..]);
-
-        println!("Third set of predictions");
-        println!("{:?}", self.y_encode.inverse_transform(&y3.view()));
-        println!(""); 
-        let predicted = loaded.predict(&x3.to_owned()); 
-        let decoded = self.y_encode.inverse_transform(&predicted.view());
-        println!("{:?}", decoded); 
 
     }
 
