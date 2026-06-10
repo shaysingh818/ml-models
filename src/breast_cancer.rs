@@ -109,7 +109,7 @@ impl Train for BreastCancerModel {
             &self.x, 
             &self.y, 
             false, 
-            0.001
+            0.0001
         ).unwrap();
 
         self.model.train_batch(4, 10, 1000);

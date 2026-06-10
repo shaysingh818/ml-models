@@ -1,4 +1,4 @@
-use ndarray::{arr2, Array2}; 
+use ndarray::{s, arr2, Array2}; 
 use polars::prelude::*;
 use polars::prelude::ParquetReader;
 use dendritic::optimizer::prelude::*;
@@ -114,37 +114,10 @@ impl Inference for IrisFlowersModel {
 
     fn inference(&mut self) {
 
-        println!("Running inference step for: {:?}", self.name); 
-
-        let class_0 = arr2(&[
-            [5.0, 3.5, 1.4, 0.2],
-            [4.3, 3.0, 1.1, 0.1],
-            [4.6, 3.4, 1.4, 0.3]
-        ]); 
-
-        let class_0_predict = self.model.predict(&class_0); 
-        println!("First class predictions");
-        println!("{:?}", class_0_predict);
-
-        let class_1 = arr2(&[
-            [6.4, 2.9, 4.3, 1.3],
-            [6.8, 2.8, 4.8, 1.4],
-            [6.7, 3.0, 5.0, 1.7]
-        ]); 
-
-        let class_1_predict = self.model.predict(&class_1); 
-        println!("Second class predictions");
-        println!("{:?}", class_1_predict);
-
-        let class_2 = arr2(&[
-            [6.4, 2.7, 5.3, 1.9],
-            [7.7, 3.8, 6.7, 2.2],
-            [7.9, 3.8, 6.4, 2.0]
-        ]); 
-
-        let class_2_predict = self.model.predict(&class_2); 
-        println!("Third class predictions");
-        println!("{:?}", class_2_predict); 
+        println!("Running inference step for: {:?}", self.name);
+        println!("{:?}", self.y);
+        let all_predictions = self.model.predict(&self.x); 
+        println!("All predictions: {:?}", all_predictions);
 
     }
 

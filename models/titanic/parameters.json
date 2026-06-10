@@ -1,0 +1,13 @@
+{
+  "graph_path": "titanic/regression_exp",
+  "weight_dim": [
+    10,
+    1
+  ],
+  "bias_dim": [
+    1,
+    1
+  ],
+  "learning_rate": 0.00001,
+  "multi_class": false
+}

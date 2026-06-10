@@ -81,10 +81,10 @@ impl Load for HousePrices {
         let df_target = df.select(["median_house_value"]).unwrap(); 
 
         self.x = df_select.
-            to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
+            to_ndarray::<Float64Type>(IndexOrder::C).unwrap();
 
         self.y = df_target.
-            to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
+            to_ndarray::<Float64Type>(IndexOrder::C).unwrap();
 
     }
 

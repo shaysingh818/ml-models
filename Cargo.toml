@@ -8,3 +8,4 @@ dendritic = "2.2.0"
 ndarray = "0.16.1"
 polars = {version = "0.50.0", features = ["parquet", "ndarray"] }
 polars-core = "0.50.0"
+rand = "0.10.1"
